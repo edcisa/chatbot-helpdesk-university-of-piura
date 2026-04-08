@@ -14,24 +14,99 @@ Aplicación web para gestionar incidencias tecnológicas, construida con **Next.
 - Node.js 18+
 - PostgreSQL (local o Vercel Postgres en producción)
 
-## Configuración local
+## Guía de instalación local (paso a paso)
+
+### 1. Clonar el repositorio
 
 ```bash
-# 1. Copiar variables de entorno
-cp .env.example .env
-# Editar .env con tu DATABASE_URL de PostgreSQL
+git clone https://github.com/edcisa/chatbot-helpdesk-university-of-piura.git
+cd chatbot-helpdesk-university-of-piura
+```
 
-# 2. Instalar dependencias
+### 2. Instalar dependencias
+
+```bash
 npm install
+```
 
-# 3. Crear tablas y cargar datos de demo
-npm run db:setup
+### 3. Configurar variables de entorno
 
-# 4. Iniciar servidor de desarrollo
+```bash
+cp .env.example .env
+```
+
+Edita el archivo `.env` y define:
+
+- `DATABASE_URL`: cadena de conexión de PostgreSQL
+- `JWT_SECRET`: clave secreta para autenticación (cámbiala en producción)
+
+Ejemplo:
+
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/piura_incidencias?schema=public"
+JWT_SECRET="cambia-esta-clave-en-produccion"
+```
+
+### 4. Preparar la base de datos
+
+Tienes dos opciones:
+
+#### Opción A: PostgreSQL local (recomendada)
+
+1. Crea una base de datos llamada `piura_incidencias`.
+2. Ejecuta migraciones y seed:
+
+```bash
+npm run db:migrate
+npm run db:seed
+```
+
+#### Opción B: Prisma Dev (sin instalar PostgreSQL manualmente)
+
+1. Inicia servidor de Prisma Dev:
+
+```bash
+npx prisma dev --name piura --detach
+```
+
+2. Obtén la URL TCP del servidor:
+
+```bash
+npx prisma dev ls
+```
+
+3. Copia la URL `postgres://...` en `DATABASE_URL` del `.env`.
+4. Sincroniza esquema y carga datos demo:
+
+```bash
+npx prisma db push
+npm run db:seed
+```
+
+### 5. Ejecutar la aplicación
+
+```bash
 npm run dev
 ```
 
 Abre [http://localhost:3000](http://localhost:3000).
+
+### 6. Iniciar sesión con usuarios de prueba
+
+- Administrador IT: `administradorit` / `admin123`
+- Reportador: `reportador` / `user123`
+
+## Troubleshooting rápido
+
+### Error `P1017 Server has closed the connection`
+
+- Verifica que `DATABASE_URL` apunte a una base de datos activa.
+- Si usas Prisma Dev, revisa puertos con `npx prisma dev ls` y actualiza `.env`.
+
+### Error `Repository not found` al clonar/push
+
+- Revisa owner y nombre exacto del repo.
+- URL correcta de este proyecto: `https://github.com/edcisa/chatbot-helpdesk-university-of-piura`
 
 ## Scripts disponibles
 
