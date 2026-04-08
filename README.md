@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sistema de Gestión de Incidencias IT – Universidad de Piura
 
-## Getting Started
+Aplicación web para gestionar incidencias tecnológicas, construida con **Next.js 16**, **PostgreSQL** y **Prisma 7**.
 
-First, run the development server:
+## Usuarios de demostración
+
+| Usuario | Contraseña | Rol | Acceso |
+|---|---|---|---|
+| `administradorit` | `admin123` | Administrador IT | Dashboard con lista de incidencias |
+| `reportador` | `user123` | Reportador | Chat para crear incidencias |
+
+## Requisitos previos
+
+- Node.js 18+
+- PostgreSQL (local o Vercel Postgres en producción)
+
+## Configuración local
 
 ```bash
+# 1. Copiar variables de entorno
+cp .env.example .env
+# Editar .env con tu DATABASE_URL de PostgreSQL
+
+# 2. Instalar dependencias
+npm install
+
+# 3. Crear tablas y cargar datos de demo
+npm run db:setup
+
+# 4. Iniciar servidor de desarrollo
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts disponibles
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Comando | Descripción |
+|---|---|
+| `npm run dev` | Servidor de desarrollo |
+| `npm run build` | Build de producción |
+| `npm run db:generate` | Regenerar cliente Prisma |
+| `npm run db:migrate` | Aplicar migraciones |
+| `npm run db:seed` | Insertar datos de demo |
+| `npm run db:setup` | Migrate + Seed (primera vez) |
 
-## Learn More
+## Despliegue en Vercel
 
-To learn more about Next.js, take a look at the following resources:
+1. Conectar repositorio en [vercel.com](https://vercel.com)
+2. Crear una base de datos Postgres desde el dashboard de Vercel
+3. Configurar las variables de entorno `DATABASE_URL` y `JWT_SECRET`
+4. Deploy automático en cada push a `main`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Estructura del proyecto
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+app/
+├── page.tsx              # Login
+├── dashboard/page.tsx    # Panel del Administrador IT
+├── reportar/page.tsx     # Chat para reportar incidencias
+└── api/
+    ├── auth/login/       # POST: iniciar sesión
+    ├── auth/session/     # GET/DELETE: sesión actual
+    └── incidencias/      # GET (lista) / POST (crear)
+        └── [id]/         # PATCH (cambiar estado)
+lib/
+├── db.ts                 # Cliente Prisma (singleton)
+└── auth.ts               # JWT con jose
+prisma/
+├── schema.prisma         # Modelos: Usuario, Incidencia
+└── seed.ts               # Usuarios y datos demo
+```

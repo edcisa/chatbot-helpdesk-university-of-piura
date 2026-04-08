@@ -1,0 +1,65 @@
+// Schema de la app de Gestión de Incidencias – Universidad de Piura
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Usuario {
+  id           Int           @id @default(autoincrement())
+  username     String        @unique
+  passwordHash String
+  rol          Rol           @default(REPORTADOR)
+  nombre       String
+  creadoEn     DateTime      @default(now())
+  incidencias  Incidencia[]
+
+  @@map("usuarios")
+}
+
+enum Rol {
+  ADMIN_IT
+  REPORTADOR
+}
+
+model Incidencia {
+  id          Int              @id @default(autoincrement())
+  titulo      String
+  descripcion String           @db.Text
+  tipo        TipoIncidencia   @default(OTRO)
+  prioridad   Prioridad        @default(MEDIA)
+  estado      EstadoIncidencia @default(ABIERTA)
+  ubicacion   String
+  reportadoPor Usuario         @relation(fields: [usuarioId], references: [id])
+  usuarioId   Int
+  creadoEn    DateTime         @default(now())
+  actualizadoEn DateTime       @updatedAt
+
+  @@map("incidencias")
+}
+
+enum TipoIncidencia {
+  HARDWARE
+  SOFTWARE
+  RED
+  ACCESO
+  OTRO
+}
+
+enum Prioridad {
+  BAJA
+  MEDIA
+  ALTA
+  CRITICA
+}
+
+enum EstadoIncidencia {
+  ABIERTA
+  EN_PROGRESO
+  RESUELTA
+  CERRADA
+}
