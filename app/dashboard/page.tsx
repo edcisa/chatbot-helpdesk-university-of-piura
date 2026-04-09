@@ -6,24 +6,35 @@ import { useRouter } from "next/navigation";
 type EstadoIncidencia = "ABIERTA" | "EN_PROGRESO" | "RESUELTA" | "CERRADA";
 type TipoIncidencia = "HARDWARE" | "SOFTWARE" | "RED" | "ACCESO" | "OTRO";
 type Prioridad = "BAJA" | "MEDIA" | "ALTA" | "CRITICA";
+type AreaIT =
+  | "MESA_AYUDA"
+  | "INFRAESTRUCTURA"
+  | "SISTEMAS"
+  | "REDES"
+  | "SEGURIDAD"
+  | "AUDIOVISUALES"
+  | "LABORATORIOS";
+type PerfilUsuario = "ESTUDIANTE" | "PROFESOR" | "RECTOR" | "ADMINISTRATIVO" | "OTRO";
 
 interface Incidencia {
   id: number;
   titulo: string;
   descripcion: string;
+  areaIT: AreaIT;
   tipo: TipoIncidencia;
   prioridad: Prioridad;
   estado: EstadoIncidencia;
   ubicacion: string;
   creadoEn: string;
   actualizadoEn: string;
-  reportadoPor: { nombre: string; username: string };
+  reportadoPor: { nombre: string; username: string; perfil: PerfilUsuario };
 }
 
 interface Usuario {
   userId: number;
   username: string;
   rol: string;
+  perfil: string;
   nombre: string;
 }
 
@@ -46,6 +57,24 @@ const TIPO_LABEL: Record<TipoIncidencia, string> = {
   SOFTWARE: "Software",
   RED: "Red",
   ACCESO: "Acceso",
+  OTRO: "Otro",
+};
+
+const AREA_IT_LABEL: Record<AreaIT, string> = {
+  MESA_AYUDA: "Mesa de ayuda",
+  INFRAESTRUCTURA: "Infraestructura",
+  SISTEMAS: "Sistemas y plataformas",
+  REDES: "Redes y conectividad",
+  SEGURIDAD: "Seguridad informática",
+  AUDIOVISUALES: "Audiovisuales",
+  LABORATORIOS: "Laboratorios",
+};
+
+const PERFIL_LABEL: Record<PerfilUsuario, string> = {
+  ESTUDIANTE: "Estudiante",
+  PROFESOR: "Profesor",
+  RECTOR: "Rector",
+  ADMINISTRATIVO: "Administrativo",
   OTRO: "Otro",
 };
 
@@ -122,7 +151,9 @@ export default function DashboardPage() {
       busqueda === "" ||
       inc.titulo.toLowerCase().includes(busqueda.toLowerCase()) ||
       inc.ubicacion.toLowerCase().includes(busqueda.toLowerCase()) ||
-      inc.reportadoPor.nombre.toLowerCase().includes(busqueda.toLowerCase());
+      inc.reportadoPor.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+      PERFIL_LABEL[inc.reportadoPor.perfil].toLowerCase().includes(busqueda.toLowerCase()) ||
+      AREA_IT_LABEL[inc.areaIT].toLowerCase().includes(busqueda.toLowerCase());
     return matchEstado && matchPrioridad && matchTipo && matchBusqueda;
   });
 
@@ -133,6 +164,16 @@ export default function DashboardPage() {
     resueltas: incidencias.filter((i) => i.estado === "RESUELTA").length,
     criticas: incidencias.filter((i) => i.prioridad === "CRITICA" && i.estado !== "CERRADA").length,
   };
+
+  const incidenciasAgrupadas = incidenciasFiltradas.reduce<Record<AreaIT, Incidencia[]>>((acc, inc) => {
+    if (!acc[inc.areaIT]) {
+      acc[inc.areaIT] = [];
+    }
+    acc[inc.areaIT].push(inc);
+    return acc;
+  }, {} as Record<AreaIT, Incidencia[]>);
+
+  const areasOrdenadas = Object.keys(AREA_IT_LABEL) as AreaIT[];
 
   function formatFecha(iso: string) {
     const d = new Date(iso);
@@ -258,9 +299,23 @@ export default function DashboardPage() {
             <p className="text-sm">No hay incidencias con los filtros seleccionados</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4">
-            {incidenciasFiltradas.map((inc) => (
-              <article key={inc.id} className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm space-y-4">
+          <div className="space-y-6">
+            {areasOrdenadas
+              .filter((area) => (incidenciasAgrupadas[area] ?? []).length > 0)
+              .map((area) => (
+                <section key={area} className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-semibold text-gray-800">
+                      Área IT: {AREA_IT_LABEL[area]}
+                    </h2>
+                    <span className="text-xs text-gray-500 bg-gray-100 border border-gray-200 rounded-full px-2.5 py-1">
+                      {(incidenciasAgrupadas[area] ?? []).length} incidencias
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4">
+                    {(incidenciasAgrupadas[area] ?? []).map((inc) => (
+                      <article key={inc.id} className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm space-y-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs text-gray-400 font-mono">Incidencia #{inc.id}</p>
@@ -279,6 +334,9 @@ export default function DashboardPage() {
                   <span className="text-xs px-2.5 py-1 rounded-full border bg-gray-100 text-gray-700 border-gray-200">
                     Tipo {TIPO_LABEL[inc.tipo]}
                   </span>
+                  <span className="text-xs px-2.5 py-1 rounded-full border bg-indigo-50 text-indigo-700 border-indigo-200">
+                    Área {AREA_IT_LABEL[inc.areaIT]}
+                  </span>
                 </div>
 
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
@@ -288,7 +346,12 @@ export default function DashboardPage() {
                   </div>
                   <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
                     <dt className="text-xs text-gray-500 uppercase tracking-wide">Reportado por</dt>
-                    <dd className="text-gray-700 mt-1">{inc.reportadoPor.nombre} ({inc.reportadoPor.username})</dd>
+                    <dd className="text-gray-700 mt-1">
+                      {inc.reportadoPor.nombre} ({inc.reportadoPor.username})
+                    </dd>
+                    <dd className="text-xs text-gray-500 mt-1">
+                      Perfil: {PERFIL_LABEL[inc.reportadoPor.perfil]}
+                    </dd>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
                     <dt className="text-xs text-gray-500 uppercase tracking-wide">Creado</dt>
@@ -328,8 +391,11 @@ export default function DashboardPage() {
                     )}
                   </div>
                 </div>
-              </article>
-            ))}
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              ))}
           </div>
         )}
       </main>

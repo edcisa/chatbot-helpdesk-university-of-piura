@@ -108,7 +108,7 @@ export default function LoginPage() {
             <p className="text-xs text-gray-500 text-center mb-3 font-medium uppercase tracking-wide">
               Cuentas de demostración
             </p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => { setUsername("administradorit"); setPassword("admin123"); }}
@@ -119,11 +119,27 @@ export default function LoginPage() {
               </button>
               <button
                 type="button"
-                onClick={() => { setUsername("reportador"); setPassword("user123"); }}
+                onClick={() => { setUsername("estudianteudep"); setPassword("user123"); }}
                 className="text-left p-3 bg-green-50 rounded-lg border border-green-100 hover:bg-green-100 transition cursor-pointer"
               >
-                <p className="text-xs font-semibold text-green-800">Reportador</p>
-                <p className="text-xs text-green-600 mt-0.5">reportador / user123</p>
+                <p className="text-xs font-semibold text-green-800">Estudiante</p>
+                <p className="text-xs text-green-600 mt-0.5">estudianteudep / user123</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setUsername("profesorudep"); setPassword("user123"); }}
+                className="text-left p-3 bg-amber-50 rounded-lg border border-amber-100 hover:bg-amber-100 transition cursor-pointer"
+              >
+                <p className="text-xs font-semibold text-amber-800">Profesor</p>
+                <p className="text-xs text-amber-700 mt-0.5">profesorudep / user123</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setUsername("rectorudep"); setPassword("user123"); }}
+                className="text-left p-3 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition cursor-pointer"
+              >
+                <p className="text-xs font-semibold text-slate-800">Rector</p>
+                <p className="text-xs text-slate-700 mt-0.5">rectorudep / user123</p>
               </button>
             </div>
           </div>

@@ -4,20 +4,31 @@ import { useState, useEffect, useRef, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 type Rol = "ADMIN_IT" | "REPORTADOR";
+type PerfilUsuario = "ESTUDIANTE" | "PROFESOR" | "RECTOR" | "ADMINISTRATIVO" | "OTRO";
 
 interface Usuario {
   userId: number;
   username: string;
   rol: Rol;
+  perfil: PerfilUsuario;
   nombre: string;
 }
 
 type TipoIncidencia = "HARDWARE" | "SOFTWARE" | "RED" | "ACCESO" | "OTRO";
 type Prioridad = "BAJA" | "MEDIA" | "ALTA" | "CRITICA";
+type AreaIT =
+  | "MESA_AYUDA"
+  | "INFRAESTRUCTURA"
+  | "SISTEMAS"
+  | "REDES"
+  | "SEGURIDAD"
+  | "AUDIOVISUALES"
+  | "LABORATORIOS";
 
 interface IncidenciaData {
   titulo: string;
   descripcion: string;
+  areaIT: AreaIT;
   tipo: TipoIncidencia;
   prioridad: Prioridad;
   ubicacion: string;
@@ -25,6 +36,9 @@ interface IncidenciaData {
 
 type ChatStep =
   | "SALUDO"
+  | "ASK_INTENCION"
+  | "ASK_CONSULTA"
+  | "ASK_AREA_IT"
   | "ASK_TITULO"
   | "ASK_TIPO"
   | "ASK_UBICACION"
@@ -39,6 +53,8 @@ interface Mensaje {
   texto: string;
 }
 
+const BOT_NOMBRE = "UDEP Soporte";
+
 const TIPOS: { valor: TipoIncidencia; etiqueta: string }[] = [
   { valor: "HARDWARE", etiqueta: "Hardware" },
   { valor: "SOFTWARE", etiqueta: "Software" },
@@ -52,6 +68,16 @@ const PRIORIDADES: { valor: Prioridad; etiqueta: string; color: string }[] = [
   { valor: "MEDIA", etiqueta: "Media", color: "bg-yellow-100 text-yellow-800 border-yellow-200" },
   { valor: "ALTA", etiqueta: "Alta", color: "bg-orange-100 text-orange-800 border-orange-200" },
   { valor: "CRITICA", etiqueta: "Crítica", color: "bg-red-100 text-red-800 border-red-200" },
+];
+
+const AREAS_IT: { valor: AreaIT; etiqueta: string }[] = [
+  { valor: "MESA_AYUDA", etiqueta: "Mesa de ayuda" },
+  { valor: "INFRAESTRUCTURA", etiqueta: "Infraestructura" },
+  { valor: "SISTEMAS", etiqueta: "Sistemas y plataformas" },
+  { valor: "REDES", etiqueta: "Redes y conectividad" },
+  { valor: "SEGURIDAD", etiqueta: "Seguridad informática" },
+  { valor: "AUDIOVISUALES", etiqueta: "Audiovisuales" },
+  { valor: "LABORATORIOS", etiqueta: "Laboratorios" },
 ];
 
 let msgCounter = 0;
@@ -85,10 +111,10 @@ export default function ReportarPage() {
         setMensajes([
           crearMensaje(
             "bot",
-            `Hola, ${data.usuario.nombre}. Soy el asistente de soporte IT de la Universidad de Piura.\n\nEstoy aquí para ayudarte a registrar una incidencia. Te haré unas preguntas rápidas.\n\n¿Cuál es el título o resumen breve del problema?`
+              `Hola, ${data.usuario.nombre}. Soy ${BOT_NOMBRE}, tu asistente de soporte IT de la Universidad de Piura.\n\n¿Qué necesitas hacer hoy?`
           ),
         ]);
-        setPaso("ASK_TITULO");
+        setPaso("ASK_INTENCION");
       })
       .catch(() => router.push("/"))
       .finally(() => setLoadingAuth(false));
@@ -107,10 +133,88 @@ export default function ReportarPage() {
     setMensajes((prev) => [...prev, crearMensaje("user", texto)]);
   }
 
-  function procesarRespuesta(respuesta: string) {
-    agregarUser(respuesta);
+  function procesarRespuesta(respuesta: string, mostrarComoMensaje = true) {
+    if (mostrarComoMensaje) {
+      agregarUser(respuesta);
+    }
 
     switch (paso) {
+      case "ASK_INTENCION": {
+        const valor = respuesta.trim().toLowerCase();
+        if (
+          valor === "1" ||
+          valor === "consulta" ||
+          valor === "hacer una consulta" ||
+          valor === "tengo una consulta"
+        ) {
+          setPaso("ASK_CONSULTA");
+          setTimeout(() => {
+            agregarBot(
+              "Perfecto. Cuéntame tu consulta y te guío con el siguiente paso."
+            );
+          }, 300);
+          return;
+        }
+
+        if (
+          valor === "2" ||
+          valor === "incidencia" ||
+          valor === "reportar incidencia" ||
+          valor === "quiero poner una incidencia"
+        ) {
+          setPaso("ASK_AREA_IT");
+          setTimeout(() => {
+            agregarBot(
+              "Excelente. Primero, elige el área IT a la que corresponde tu incidencia:"
+            );
+          }, 300);
+          return;
+        }
+
+        agregarBot("Elige una opción: 1) Hacer una consulta o 2) Reportar una incidencia.");
+        break;
+      }
+
+      case "ASK_AREA_IT": {
+        const num = parseInt(respuesta.trim());
+        let areaIT: AreaIT | undefined;
+        if (!isNaN(num) && num >= 1 && num <= AREAS_IT.length) {
+          areaIT = AREAS_IT[num - 1].valor;
+        } else {
+          const match = AREAS_IT.find(
+            (a) =>
+              a.etiqueta.toLowerCase() === respuesta.trim().toLowerCase() ||
+              a.valor.toLowerCase() === respuesta.trim().toLowerCase()
+          );
+          areaIT = match?.valor;
+        }
+
+        if (!areaIT) {
+          agregarBot("No reconocí esa área. Por favor elige una opción válida.");
+          return;
+        }
+
+        setIncidencia((prev) => ({ ...prev, areaIT }));
+        setPaso("ASK_TITULO");
+        setTimeout(() => {
+          agregarBot("Perfecto. ¿Cuál es el título o resumen breve del problema?");
+        }, 300);
+        break;
+      }
+
+      case "ASK_CONSULTA": {
+        const consulta = respuesta.trim();
+        if (consulta.length < 5) {
+          agregarBot("Cuéntame un poco más de detalle para poder orientarte mejor.");
+          return;
+        }
+        setPaso("DONE");
+        agregarBot(
+          `Gracias por tu consulta. Te recomiendo revisar primero la sección de \"Mis incidencias\" para ver estados y respuestas del equipo IT.\n\nSi prefieres, también puedes registrar una incidencia nueva desde \"Nueva incidencia\".`
+        );
+        break;
+      }
+
       case "ASK_TITULO": {
         const titulo = respuesta.trim();
         if (titulo.length < 5) {
@@ -260,11 +364,11 @@ export default function ReportarPage() {
   function reiniciar() {
     msgCounter = 0;
     setIncidencia({});
-    setPaso("ASK_TITULO");
+    setPaso("ASK_INTENCION");
     setMensajes([
       crearMensaje(
         "bot",
-        `Hola de nuevo, ${usuario?.nombre}.\n\n¿Cuál es el título o resumen del nuevo problema?`
+        `Hola de nuevo, ${usuario?.nombre}.\n\n¿Qué necesitas hacer ahora?`
       ),
     ]);
   }
@@ -283,8 +387,8 @@ export default function ReportarPage() {
   }
 
   function seleccionarOpcion(valor: string) {
-    setInput(valor);
-    procesarRespuesta(valor);
+    setInput("");
+    procesarRespuesta(valor, false);
   }
 
   if (loadingAuth) {
@@ -305,7 +409,7 @@ export default function ReportarPage() {
           </div>
           <div>
             <p className="text-xs opacity-70 leading-none">Universidad de Piura</p>
-            <p className="font-semibold text-sm leading-tight">Soporte IT</p>
+            <p className="font-semibold text-sm leading-tight">{BOT_NOMBRE}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -341,7 +445,7 @@ export default function ReportarPage() {
             >
               {msg.origen === "bot" && (
                 <div className="w-7 h-7 bg-[#1e3a5f] rounded-full flex items-center justify-center text-white text-xs font-bold mr-2 flex-shrink-0 mt-1">
-                  IT
+                  U
                 </div>
               )}
               <div
@@ -369,6 +473,25 @@ export default function ReportarPage() {
         </div>
 
         {/* Botones de opciones rápidas */}
+        {paso === "ASK_INTENCION" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              onClick={() => seleccionarOpcion("consulta")}
+              className="p-4 bg-white border border-gray-200 rounded-xl text-left hover:bg-blue-50 hover:border-blue-300 transition"
+            >
+              <p className="text-sm font-semibold text-gray-800">Hacer una consulta</p>
+              <p className="text-xs text-gray-500 mt-1">Tengo una duda y necesito orientación</p>
+            </button>
+            <button
+              onClick={() => seleccionarOpcion("incidencia")}
+              className="p-4 bg-[#1e3a5f] text-white border border-[#1e3a5f] rounded-xl text-left hover:bg-[#2e5090] transition"
+            >
+              <p className="text-sm font-semibold">Reportar una incidencia</p>
+              <p className="text-xs text-white/80 mt-1">Quiero registrar un problema técnico</p>
+            </button>
+          </div>
+        )}
+
         {paso === "ASK_TIPO" && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {TIPOS.map((t, i) => (
@@ -378,6 +501,20 @@ export default function ReportarPage() {
                 className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm hover:bg-blue-50 hover:border-blue-300 transition text-left"
               >
                 <span>{t.etiqueta}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {paso === "ASK_AREA_IT" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {AREAS_IT.map((a, i) => (
+              <button
+                key={a.valor}
+                onClick={() => seleccionarOpcion(String(i + 1))}
+                className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm hover:bg-blue-50 hover:border-blue-300 transition text-left"
+              >
+                {a.etiqueta}
               </button>
             ))}
           </div>
@@ -415,7 +552,7 @@ export default function ReportarPage() {
         )}
 
         {/* Input de texto */}
-        {paso !== "DONE" && paso !== "ASK_TIPO" && paso !== "ASK_PRIORIDAD" && paso !== "CONFIRMAR" && (
+        {paso !== "DONE" && paso !== "ASK_INTENCION" && paso !== "ASK_AREA_IT" && paso !== "ASK_TIPO" && paso !== "ASK_PRIORIDAD" && paso !== "CONFIRMAR" && (
           <form onSubmit={handleSubmit} className="flex gap-2">
             <input
               type="text"

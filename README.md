@@ -7,7 +7,9 @@ Aplicación web para gestionar incidencias tecnológicas, construida con **Next.
 | Usuario | Contraseña | Rol | Acceso |
 |---|---|---|---|
 | `administradorit` | `admin123` | Administrador IT | Dashboard con lista de incidencias |
-| `reportador` | `user123` | Reportador | Chat para crear incidencias |
+| `estudianteudep` | `user123` | Reportador (Estudiante) | Chat para crear incidencias |
+| `profesorudep` | `user123` | Reportador (Profesor) | Chat para crear incidencias |
+| `rectorudep` | `user123` | Reportador (Rector) | Chat para crear incidencias |
 
 ## Requisitos previos
 
@@ -94,7 +96,9 @@ Abre [http://localhost:3000](http://localhost:3000).
 ### 6. Iniciar sesión con usuarios de prueba
 
 - Administrador IT: `administradorit` / `admin123`
-- Reportador: `reportador` / `user123`
+- Estudiante: `estudianteudep` / `user123`
+- Profesor: `profesorudep` / `user123`
+- Rector: `rectorudep` / `user123`
 
 ## Troubleshooting rápido
 

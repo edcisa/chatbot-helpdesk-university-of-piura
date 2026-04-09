@@ -11,6 +11,7 @@ interface Usuario {
   userId: number;
   username: string;
   rol: "ADMIN_IT" | "REPORTADOR";
+  perfil: "ESTUDIANTE" | "PROFESOR" | "RECTOR" | "ADMINISTRATIVO" | "OTRO";
   nombre: string;
 }
 

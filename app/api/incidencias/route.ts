@@ -11,7 +11,7 @@ export async function GET() {
   const incidencias = await prisma.incidencia.findMany({
     include: {
       reportadoPor: {
-        select: { nombre: true, username: true },
+        select: { nombre: true, username: true, perfil: true },
       },
     },
     orderBy: { creadoEn: "desc" },
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { titulo, descripcion, tipo, prioridad, ubicacion } = body;
+    const { titulo, descripcion, areaIT, tipo, prioridad, ubicacion } = body;
 
     if (!titulo || !descripcion || !ubicacion) {
       return NextResponse.json(
@@ -41,6 +41,7 @@ export async function POST(request: Request) {
       data: {
         titulo,
         descripcion,
+        areaIT: areaIT ?? "MESA_AYUDA",
         tipo: tipo ?? "OTRO",
         prioridad: prioridad ?? "MEDIA",
         ubicacion,

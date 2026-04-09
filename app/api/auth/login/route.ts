@@ -35,12 +35,19 @@ export async function POST(request: Request) {
       userId: usuario.id,
       username: usuario.username,
       rol: usuario.rol,
+      perfil: usuario.perfil,
       nombre: usuario.nombre,
     });
 
     const response = NextResponse.json({
       ok: true,
-      usuario: { id: usuario.id, username: usuario.username, rol: usuario.rol, nombre: usuario.nombre },
+      usuario: {
+        id: usuario.id,
+        username: usuario.username,
+        rol: usuario.rol,
+        perfil: usuario.perfil,
+        nombre: usuario.nombre,
+      },
     });
 
     response.cookies.set("session", token, {

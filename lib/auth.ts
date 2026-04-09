@@ -9,6 +9,7 @@ export interface JWTPayload {
   userId: number;
   username: string;
   rol: string;
+  perfil: string;
   nombre: string;
 }
 
